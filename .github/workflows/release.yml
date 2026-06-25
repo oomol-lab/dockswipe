@@ -1,0 +1,140 @@
+name: Release
+
+# One-click stable release. Click "Run workflow" and the version is either
+# given explicitly or auto-bumped from the latest tag (patch by default); the
+# workflow builds both architectures, Developer-ID signs them, publishes a
+# GitHub Release with the tarballs, and asks oomol-lab/homebrew-tap to bump the
+# Homebrew formula. There is no beta/nightly channel — every release is stable.
+# The tag is created at publish time; you never push tags by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (e.g. 1.2.3). Leave empty to auto-bump from the latest tag.
+        required: false
+        type: string
+        default: ""
+      bump:
+        description: Segment to bump when version is empty.
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+permissions:
+  contents: write
+
+# Never run two publishes at once: both create a tag and a GitHub Release.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      tag: ${{ steps.compute.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Compute version
+        id: compute
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+          VERSION_BUMP: ${{ inputs.bump }}
+        run: bash scripts/ci/compute_version.sh
+
+  publish:
+    name: Publish ${{ needs.version.outputs.tag }}
+    needs: version
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history so the auto-generated release notes can diff against
+          # the previous tag.
+          fetch-depth: 0
+
+      - name: Import Developer ID certificate
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        run: bash scripts/ci/import_cert.sh
+
+      - name: Build, sign & package (arm64 + x86_64)
+        # One thin, signed binary per arch, each tarred as
+        # dockswipe-<version>-<arch>.tar.gz (the name the Homebrew formula
+        # expects). Signed with Developer ID but not notarized — Homebrew strips
+        # quarantine on install, so `brew install` runs it without a prompt.
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for ARCH in arm64 x86_64; do
+            make build ARCH="$ARCH" VERSION="$VERSION"
+            codesign --force --options runtime --timestamp \
+              --sign "Developer ID Application" dockswipe
+            codesign --verify --strict --verbose=2 dockswipe
+            test "$(lipo -archs dockswipe)" = "$ARCH"
+            install -d "stage/$ARCH"
+            mv dockswipe "stage/$ARCH/dockswipe"
+            tar -czf "dist/dockswipe-$VERSION-$ARCH.tar.gz" -C "stage/$ARCH" dockswipe
+          done
+          ls -l dist
+
+      - name: Create GitHub Release (draft)
+        # Attach the tarballs while the release is still a draft, then publish
+        # it in the next step. Immutable releases (the org enables them on its
+        # repos, e.g. LockIME) freeze a release's assets the moment it is
+        # published — a one-shot published upload fails "Cannot upload asset ...
+        # to an immutable release" partway through. Drafts stay mutable.
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ env.TAG }}
+          generate_release_notes: true
+          draft: true
+          files: dist/*.tar.gz
+
+      - name: Publish GitHub Release
+        # Flip the draft to published now both tarballs are attached. This is
+        # where the tag (on github.sha) is created and the release becomes
+        # "Latest" (stable, not a pre-release).
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "$TAG" --draft=false
+
+      - name: Mint Homebrew tap token
+        # Cross-repo dispatch needs more than GITHUB_TOKEN (scoped to this repo),
+        # so mint a short-lived token from the org's GitHub App, scoped to
+        # homebrew-tap only. Same App/secrets the LockIME release uses.
+        id: tap-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.OOMOL_LAB_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.OOMOL_LAB_GITHUB_APP_PRIVATE_KEY }}
+          owner: oomol-lab
+          repositories: homebrew-tap
+          permission-contents: write
+
+      - name: Bump Homebrew formula (oomol-lab/homebrew-tap)
+        # The payload carries only the version: the tap's bump-dockswipe
+        # workflow re-downloads the published tarballs and computes the sha256
+        # hashes itself, so the formula can never disagree with the artifacts.
+        # Runs last — the Release is already out if this fails.
+        env:
+          GH_TOKEN: ${{ steps.tap-token.outputs.token }}
+        run: |
+          gh api repos/oomol-lab/homebrew-tap/dispatches \
+            -f event_type=dockswipe-release \
+            -f "client_payload[version]=$VERSION"

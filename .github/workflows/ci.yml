@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build
+        # Compile the thin slice for this arch. The runner is Apple silicon;
+        # clang cross-compiles the x86_64 slice from it. This is the same path
+        # the release takes, so a PR can't land code that only builds for one
+        # architecture.
+        run: make build ARCH=${{ matrix.arch }}
+
+      - name: Verify arch
+        run: test "$(lipo -archs dockswipe)" = "${{ matrix.arch }}"
+
+      - name: Smoke-test (native arch only)
+        # Only the arm64 slice can execute on the Apple-silicon runner.
+        # --version posts no events and needs no Accessibility permission.
+        if: matrix.arch == 'arm64'
+        run: ./dockswipe --version

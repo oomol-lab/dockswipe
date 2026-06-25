@@ -1,0 +1,9 @@
+# build artifact
+/dockswipe
+*.o
+.DS_Store
+
+# release packaging (CI staging; created by `make`-based release builds)
+/dist/
+/stage/
+*.tar.gz

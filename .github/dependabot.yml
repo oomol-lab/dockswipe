@@ -1,0 +1,15 @@
+# Keep the GitHub Actions used by ci.yml / release.yml current. Grouped into a
+# single PR; the `ci` prefix + `(deps)` scope match the repo's commit style.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
