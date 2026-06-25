@@ -2,6 +2,13 @@
 
 [English](./README.md) · [简体中文](./README.zh-CN.md)
 
+[![CI](https://img.shields.io/github/actions/workflow/status/oomol-lab/dockswipe/ci.yml?branch=main&label=CI&logo=github)](https://github.com/oomol-lab/dockswipe/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/oomol-lab/dockswipe?logo=github&color=blue)](https://github.com/oomol-lab/dockswipe/releases/latest)
+[![Homebrew](https://img.shields.io/badge/homebrew-oomol--lab%2Ftap-orange?logo=homebrew)](https://github.com/oomol-lab/homebrew-tap)
+[![Platform](https://img.shields.io/badge/platform-macOS-black?logo=apple)](https://www.apple.com/macos/)
+[![Language](https://img.shields.io/badge/language-Objective--C-438eff)](./dockswipe.m)
+[![License](https://img.shields.io/github/license/oomol-lab/dockswipe?color=green)](./LICENSE)
+
 Synthesize macOS **trackpad dock-swipe gestures** from the command line — programmatically
 trigger **Mission Control**, **switch desktops (Spaces)**, **App Exposé**, **Show Desktop**
 and **Launchpad** through the *real trackpad gesture pathway*, with **controllable speed**

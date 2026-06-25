@@ -2,6 +2,13 @@
 
 [English](./README.md) · [简体中文](./README.zh-CN.md)
 
+[![CI](https://img.shields.io/github/actions/workflow/status/oomol-lab/dockswipe/ci.yml?branch=main&label=CI&logo=github)](https://github.com/oomol-lab/dockswipe/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/oomol-lab/dockswipe?logo=github&color=blue)](https://github.com/oomol-lab/dockswipe/releases/latest)
+[![Homebrew](https://img.shields.io/badge/homebrew-oomol--lab%2Ftap-orange?logo=homebrew)](https://github.com/oomol-lab/homebrew-tap)
+[![Platform](https://img.shields.io/badge/platform-macOS-black?logo=apple)](https://www.apple.com/macos/)
+[![Language](https://img.shields.io/badge/language-Objective--C-438eff)](./dockswipe.m)
+[![License](https://img.shields.io/github/license/oomol-lab/dockswipe?color=green)](./LICENSE)
+
 从命令行合成 macOS **触控板 dock-swipe 手势**——以**真正的触控板手势路径**（不是快捷键、也不是瞬切 API）
 可编程地触发 **Mission Control**、**切换桌面（Spaces）**、**App Exposé**、**显示桌面**、**Launchpad**，
 并且**可控制速率**（跟手的渐进动画，而非瞬间完成）。
