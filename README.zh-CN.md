@@ -16,6 +16,12 @@
 为**端到端 UI 自动化测试**而生：它驱动的正是三/四指触控板 swipe 在系统层产生的效果，
 既不靠快捷键，也不需要真实触控板。
 
+## 演示
+
+直接从命令行驱动 macOS dock-swipe 手势：
+
+<video src="https://github.com/oomol-lab/dockswipe/raw/main/assets/demo.mp4" controls muted width="100%"></video>
+
 ## 为什么不用快捷键 / Spaces API？
 
 | 需求 | dock-swipe 为什么对得上 |

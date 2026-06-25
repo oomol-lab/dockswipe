@@ -17,6 +17,12 @@ and **Launchpad** through the *real trackpad gesture pathway*, with **controllab
 Built for **end-to-end UI test automation**: it drives the exact system effects a 3/4-finger
 trackpad swipe produces, without a keyboard shortcut and without a physical trackpad.
 
+## Demo
+
+Driving macOS dock-swipe gestures straight from the terminal:
+
+<video src="https://github.com/oomol-lab/dockswipe/raw/main/assets/demo.mp4" controls muted width="100%"></video>
+
 ## Why not a keyboard shortcut or a Spaces API?
 
 | Need | Why dock-swipe fits |
